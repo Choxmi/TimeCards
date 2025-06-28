@@ -76,8 +76,8 @@ function renderRecords() {
     tr.innerHTML = `<td>${i+1}</td><td>${rec.date}</td><td>${rec.clockIn}</td><td>${rec.clockOut}</td><td>${rec.total}</td>`;
     tbody.appendChild(tr);
   });
-  table.style.display = '';
-  document.getElementById('exportBtn').style.display = 'inline-block';
+//   table.style.display = '';
+//   document.getElementById('exportBtn').style.display = 'inline-block';
   renderUserTotal();
 }
 
@@ -117,6 +117,28 @@ document.addEventListener('DOMContentLoaded', () => {
   const userSelect = document.getElementById('userSelect');
   const addUserBtn = document.getElementById('addUserBtn');
   const newUserName = document.getElementById('newUserName');
+
+  // Move rangeListDiv to be a sibling, not a child, and wrap main content
+  const rangeListDiv = document.createElement('div');
+  rangeListDiv.id = 'rangeListDiv';
+  rangeListDiv.style.width = '220px';
+  rangeListDiv.style.minHeight = '400px';
+  rangeListDiv.style.float = 'left';
+  rangeListDiv.style.marginRight = '2rem';
+  rangeListDiv.innerHTML = '<h3>Date Ranges</h3><ul id="rangeList" style="list-style:none;padding:0;"></ul>';
+
+  // Wrap all main content in a container
+  const mainContent = document.createElement('div');
+  mainContent.id = 'mainContent';
+  mainContent.style.overflow = 'auto';
+
+  // Move all children except rangeListDiv into mainContent
+  while (document.body.firstChild) {
+    mainContent.appendChild(document.body.firstChild);
+  }
+  // Add rangeListDiv and mainContent to body
+  document.body.appendChild(rangeListDiv);
+  document.body.appendChild(mainContent);
 
   setRangeBtn.addEventListener('click', () => {
     const start = startDateInput.value;
@@ -158,25 +180,24 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     const clockIn = document.getElementById('clockIn').value;
     const clockOut = document.getElementById('clockOut').value;
-    if (!clockIn || !clockOut) {
-      resultDiv.textContent = 'Please enter both times.';
+    const clockInDate = document.getElementById('clockInDate').value; // get editable date
+    if (!clockIn || !clockOut || !clockInDate) {
+      resultDiv.textContent = 'Please enter date and both times.';
       return;
     }
     const [inH, inM] = clockIn.split(':').map(Number);
     const [outH, outM] = clockOut.split(':').map(Number);
-    let start = new Date();
-    let end = new Date();
+    let start = new Date(clockInDate);
+    let end = new Date(clockInDate);
     start.setHours(inH, inM, 0, 0);
     end.setHours(outH, outM, 0, 0);
     if (end < start) end.setDate(end.getDate() + 1); // handle overnight
     const diffMs = end - start;
     const hours = Math.floor(diffMs / 1000 / 60 / 60);
     const mins = Math.floor((diffMs / 1000 / 60) % 60);
-    const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
     const total = `${hours} hour(s) ${mins} minute(s)`;
-    usersByRange[currentRange][currentUser].push({ date: today, clockIn, clockOut, total });
+    usersByRange[currentRange][currentUser].push({ date: clockInDate, clockIn, clockOut, total });
     saveUsers();
-    resultDiv.textContent = `Added: ${today} ${clockIn} - ${clockOut} (${total})`;
     renderRecords();
     form.reset();
   });
@@ -200,6 +221,158 @@ document.addEventListener('DOMContentLoaded', () => {
       URL.revokeObjectURL(url);
     }, 0);
   });
+
+  // Add Export All Users CSV button
+  const exportAllCsvBtn = document.createElement('button');
+  exportAllCsvBtn.id = 'exportAllCsvBtn';
+  exportAllCsvBtn.textContent = 'Export All Users as CSV';
+  exportAllCsvBtn.style.display = 'none';
+  exportAllCsvBtn.style.marginLeft = '1rem';
+  exportBtn.parentNode.insertBefore(exportAllCsvBtn, exportBtn.nextSibling);
+
+  function updateExportAllCsvBtn() {
+    if (!currentRange || !usersByRange[currentRange] || Object.keys(usersByRange[currentRange]).length === 0) {
+      exportAllCsvBtn.style.display = 'none';
+    } else {
+      exportAllCsvBtn.style.display = 'inline-block';
+    }
+  }
+
+  // Patch renderRecords to update the all-users CSV button
+  const origRenderRecords = renderRecords;
+  renderRecords = function() {
+    origRenderRecords();
+    updateExportAllCsvBtn();
+  };
+
+  exportAllCsvBtn.addEventListener('click', () => {
+    if (!currentRange || !usersByRange[currentRange]) return;
+    let csv = 'User,Date,Clock In,Clock Out,Total\n';
+    Object.entries(usersByRange[currentRange]).forEach(([user, records]) => {
+      records.forEach(rec => {
+        csv += `${user},${rec.date},${rec.clockIn},${rec.clockOut},${rec.total}\n`;
+      });
+    });
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `all_users_timecards_${currentRange.replace('__','-')}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 0);
+  });
+
+  function renderRangeList() {
+    const rangeList = document.getElementById('rangeList');
+    rangeList.innerHTML = '';
+    Object.keys(usersByRange).forEach((rangeKey) => {
+      const li = document.createElement('li');
+      li.style.marginBottom = '0.5rem';
+      const [start, end] = rangeKey.split('__');
+      li.style.display = 'flex';
+      li.style.alignItems = 'center';
+      const rangeText = document.createElement('span');
+      rangeText.textContent = `${start} to ${end}`;
+      rangeText.style.cursor = 'pointer';
+      if (rangeKey === currentRange) {
+        rangeText.style.fontWeight = 'bold';
+        rangeText.style.textDecoration = 'underline';
+      }
+      rangeText.addEventListener('click', () => {
+        currentRange = rangeKey;
+        document.getElementById('startDate').value = start;
+        document.getElementById('endDate').value = end;
+        document.getElementById('user-section').style.display = '';
+        document.getElementById('timecard-form').style.display = '';
+        updateUserSelect();
+        renderRecords();
+        renderRangeList();
+      });
+      // Delete button
+      const delBtn = document.createElement('button');
+      delBtn.textContent = '🗑️';
+      delBtn.title = 'Delete this date range';
+      delBtn.style.marginLeft = '0.5rem';
+      delBtn.style.background = 'none';
+      delBtn.style.border = 'none';
+      delBtn.style.cursor = 'pointer';
+      delBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (confirm(`Are you sure you want to delete the date range ${start} to ${end}? This will remove all users and records in this range.`)) {
+          delete usersByRange[rangeKey];
+          saveUsers();
+          // If currentRange was deleted, clear selection
+          if (currentRange === rangeKey) {
+            currentRange = null;
+            currentUser = null;
+            document.getElementById('startDate').value = '';
+            document.getElementById('endDate').value = '';
+            document.getElementById('user-section').style.display = 'none';
+            document.getElementById('timecard-form').style.display = 'none';
+          }
+          updateUserSelect();
+          renderRecords();
+          renderRangeList();
+        }
+      });
+      li.appendChild(rangeText);
+      li.appendChild(delBtn);
+      rangeList.appendChild(li);
+    });
+  }
+
+  // Patch setRangeBtn to update range list
+  const origSetRangeBtnHandler = setRangeBtn.onclick;
+  setRangeBtn.onclick = function(...args) {
+    if (origSetRangeBtnHandler) origSetRangeBtnHandler.apply(this, args);
+    renderRangeList();
+  };
+  setRangeBtn.addEventListener('click', renderRangeList);
+
+  function renderAllUsersRecords() {
+    const container = document.getElementById('allUsersRecords');
+    if (!currentRange || !usersByRange[currentRange] || Object.keys(usersByRange[currentRange]).length === 0) {
+      container.innerHTML = '';
+      return;
+    }
+    let html = '<h3>All User Records for Selected Date Range</h3>';
+    Object.entries(usersByRange[currentRange]).forEach(([user, records]) => {
+      if (!records.length) return;
+      html += `<div style="margin-bottom:1.5rem;"><b>${user}</b><table style="width:100%;margin-top:0.5rem;margin-bottom:0.5rem;"><thead><tr><th>#</th><th>Date</th><th>Clock In</th><th>Clock Out</th><th>Total</th><th>Delete</th></tr></thead><tbody>`;
+      records.forEach((rec, i) => {
+        html += `<tr data-user="${user}" data-index="${i}"><td>${i+1}</td><td>${rec.date}</td><td>${rec.clockIn}</td><td>${rec.clockOut}</td><td>${rec.total}</td><td><button class="delete-record-btn" data-user="${user}" data-index="${i}">Delete</button></td></tr>`;
+      });
+      html += '</tbody></table>';
+      html += `<div style="font-weight:500;">Total: ${getUserTotal(records)}</div></div>`;
+    });
+    container.innerHTML = html;
+
+    // Add event listeners for delete buttons
+    container.querySelectorAll('.delete-record-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const user = btn.getAttribute('data-user');
+        const idx = parseInt(btn.getAttribute('data-index'), 10);
+        if (usersByRange[currentRange] && usersByRange[currentRange][user]) {
+          usersByRange[currentRange][user].splice(idx, 1);
+          saveUsers();
+          renderRecords();
+        }
+      });
+    });
+  }
+
+  // Patch renderRecords to also update all users records
+  const origRenderRecords2 = renderRecords;
+  renderRecords = function() {
+    origRenderRecords2();
+    renderAllUsersRecords();
+  };
+
+  renderRangeList();
 });
 
 console.log('👋 This message is being logged by "renderer.js", included via webpack');

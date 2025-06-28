@@ -1,45 +1,61 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="UTF-8" />
-    <title>Timecard Hours Counter</title>
 
-  </head>
-  <body>
-    <h1>Timecard Hours Counter</h1>
-    <div id="date-range-section" style="margin-bottom:1rem;">
-      <label for="startDate">Start Date:</label>
-      <input type="date" id="startDate" required />
-      <label for="endDate">End Date:</label>
-      <input type="date" id="endDate" required />
-      <button id="setRangeBtn" type="button">Set Date Range</button>
-    </div>
-    <div id="user-section" style="margin-bottom:1rem;display:none;">
-      <label for="userSelect">User:</label>
-      <select id="userSelect"></select>
-      <input type="text" id="newUserName" placeholder="New user name" />
-      <button id="addUserBtn" type="button">Add User</button>
-    </div>
-    <form id="timecard-form" style="display:none;">
+<head>
+  <meta charset="UTF-8" />
+  <title>Timecard Hours Counter</title>
+
+</head>
+
+<body style="max-width: 80%;">
+  <h1>Timecard Hours Counter</h1>
+  <div id="date-range-section" style="margin-bottom:1rem;">
+    <label for="startDate">Start Date:</label>
+    <input type="date" id="startDate" style="padding: 10px;" required />
+    <label for="endDate">End Date:</label>
+    <input type="date" id="endDate" style="padding: 10px;" required />
+    <button id="setRangeBtn" type="button">Set Date Range</button>
+  </div>
+  <div id="user-section" style="margin-bottom:1rem;display:none;">
+    <label for="userSelect">User:</label>
+    <select id="userSelect" style="padding: 10px;"></select>
+    <input type="text" id="newUserName" style="padding: 10px;" placeholder="New user name" />
+    <button id="addUserBtn" type="button">Add User</button>
+  </div>
+  <form id="timecard-form" style="display:none;">
+    <div style="display: flex; gap: 2rem; justify-content: center; align-items: center;">
+      <div>
+        <label for="clockInDate">Clock In Date:</label>
+        <input type="date" id="clockInDate" style="padding: 10px;" required />
+      </div>
       <div>
         <label for="clockIn">Clock In:</label>
-        <input type="time" id="clockIn" required />
+        <input type="time" id="clockIn" style="padding: 10px;" required />
       </div>
       <div>
         <label for="clockOut">Clock Out:</label>
-        <input type="time" id="clockOut" required />
+        <input type="time" id="clockOut" style="padding: 10px;" required />
       </div>
       <button type="submit">Add Record</button>
-    </form>
-    <div id="result" style="margin-top:1rem;"></div>
-    <div id="userTotal" style="margin-top:1rem;"></div>
-    <table id="recordsTable" style="width:100%;margin-top:1rem;display:none;">
-      <thead>
-        <tr><th>#</th><th>Date</th><th>Clock In</th><th>Clock Out</th><th>Total</th></tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-    <button id="exportBtn" style="display:none;margin-top:1rem;">Export All Records</button>
-    <script src="renderer.js"></script>
-  </body>
+    </div>
+  </form>
+  <div id="result" style="margin-top:1rem;"></div>
+  <div id="userTotal" style="margin-top:1rem;display:none;"></div>
+  <table id="recordsTable" style="width:100%;margin-top:1rem;display:none;">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Date</th>
+        <th>Clock In</th>
+        <th>Clock Out</th>
+        <th>Total</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+  <button id="exportBtn" style="display:none;margin-top:1rem;">Export All Records</button>
+  <div id="allUsersRecords" style="margin-top:2rem;"></div>
+  <script src="renderer.js"></script>
+</body>
+
 </html>
