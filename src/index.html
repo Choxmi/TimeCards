@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Timecard Hours Counter</title>
+
+  </head>
+  <body>
+    <h1>Timecard Hours Counter</h1>
+    <div id="date-range-section" style="margin-bottom:1rem;">
+      <label for="startDate">Start Date:</label>
+      <input type="date" id="startDate" required />
+      <label for="endDate">End Date:</label>
+      <input type="date" id="endDate" required />
+      <button id="setRangeBtn" type="button">Set Date Range</button>
+    </div>
+    <div id="user-section" style="margin-bottom:1rem;display:none;">
+      <label for="userSelect">User:</label>
+      <select id="userSelect"></select>
+      <input type="text" id="newUserName" placeholder="New user name" />
+      <button id="addUserBtn" type="button">Add User</button>
+    </div>
+    <form id="timecard-form" style="display:none;">
+      <div>
+        <label for="clockIn">Clock In:</label>
+        <input type="time" id="clockIn" required />
+      </div>
+      <div>
+        <label for="clockOut">Clock Out:</label>
+        <input type="time" id="clockOut" required />
+      </div>
+      <button type="submit">Add Record</button>
+    </form>
+    <div id="result" style="margin-top:1rem;"></div>
+    <div id="userTotal" style="margin-top:1rem;"></div>
+    <table id="recordsTable" style="width:100%;margin-top:1rem;display:none;">
+      <thead>
+        <tr><th>#</th><th>Date</th><th>Clock In</th><th>Clock Out</th><th>Total</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <button id="exportBtn" style="display:none;margin-top:1rem;">Export All Records</button>
+    <script src="renderer.js"></script>
+  </body>
+</html>
