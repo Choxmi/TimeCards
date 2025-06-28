@@ -121,7 +121,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Move rangeListDiv to be a sibling, not a child, and wrap main content
   const rangeListDiv = document.createElement('div');
   rangeListDiv.id = 'rangeListDiv';
-  rangeListDiv.style.width = '220px';
+  rangeListDiv.style.width = '300px';
   rangeListDiv.style.minHeight = '400px';
   rangeListDiv.style.float = 'left';
   rangeListDiv.style.marginRight = '2rem';
@@ -265,6 +265,60 @@ document.addEventListener('DOMContentLoaded', () => {
       URL.revokeObjectURL(url);
     }, 0);
   });
+
+  // Add Export User Totals CSV button
+  const exportUserTotalsCsvBtn = document.createElement('button');
+  exportUserTotalsCsvBtn.id = 'exportUserTotalsCsvBtn';
+  exportUserTotalsCsvBtn.textContent = 'Export User Totals as CSV';
+  exportUserTotalsCsvBtn.style.display = 'none';
+  exportUserTotalsCsvBtn.style.marginLeft = '1rem';
+  exportBtn.parentNode.insertBefore(exportUserTotalsCsvBtn, exportBtn.nextSibling);
+
+  function updateExportUserTotalsCsvBtn() {
+    if (!currentRange || !usersByRange[currentRange] || Object.keys(usersByRange[currentRange]).length === 0) {
+      exportUserTotalsCsvBtn.style.display = 'none';
+    } else {
+      exportUserTotalsCsvBtn.style.display = 'inline-block';
+    }
+  }
+
+  exportUserTotalsCsvBtn.addEventListener('click', () => {
+    if (!currentRange || !usersByRange[currentRange]) return;
+    let csv = 'User,Total Hours,Total Minutes\n';
+    Object.entries(usersByRange[currentRange]).forEach(([user, records]) => {
+      let totalMs = 0;
+      records.forEach((rec) => {
+        if (!rec.total) return;
+        const match = rec.total.match(/(\d+) hour\(s\) (\d+) minute\(s\)/);
+        if (match) {
+          const h = parseInt(match[1], 10);
+          const m = parseInt(match[2], 10);
+          totalMs += (h * 60 + m) * 60 * 1000;
+        }
+      });
+      const totalH = Math.floor(totalMs / 1000 / 60 / 60);
+      const totalM = Math.floor((totalMs / 1000 / 60) % 60);
+      csv += `${user},${totalH},${totalM}\n`;
+    });
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `user_totals_${currentRange.replace('__','-')}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 0);
+  });
+
+  // Patch renderRecords to update the user totals CSV button
+  const origRenderRecordsUserTotals = renderRecords;
+  renderRecords = function() {
+    origRenderRecordsUserTotals();
+    updateExportUserTotalsCsvBtn();
+  };
 
   function renderRangeList() {
     const rangeList = document.getElementById('rangeList');
