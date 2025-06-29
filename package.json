@@ -10,7 +10,7 @@
     "make": "electron-forge make",
     "publish": "electron-forge publish",
     "lint": "echo \"No linting configured\"",
-    "build": "electron-builder"
+    "build": "electron-forge package && electron-builder"
   },
   "keywords": [],
   "author": {
